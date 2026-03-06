@@ -1,0 +1,78 @@
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+:root[data-theme="default"] {
+  --background: 5 5 5;
+  --foreground: 209 213 219;
+  --surface: 12 14 20;
+  --card: 17 24 39;
+  --border: 34 49 63;
+  --primary: 94 234 212;
+  --secondary: 125 252 137;
+  --accent: 234 179 8;
+  --danger: 239 68 68;
+  --muted: 156 163 175;
+}
+
+:root[data-theme="synthwave"] {
+  --background: 10 6 22;
+  --foreground: 232 220 255;
+  --surface: 26 17 51;
+  --card: 38 23 69;
+  --border: 109 40 217;
+  --primary: 34 211 238;
+  --secondary: 217 70 239;
+  --accent: 250 204 21;
+  --danger: 248 113 113;
+  --muted: 196 181 253;
+}
+
+:root[data-theme="sith"] {
+  --background: 5 2 2;
+  --foreground: 245 212 212;
+  --surface: 22 8 8;
+  --card: 34 12 12;
+  --border: 127 29 29;
+  --primary: 248 113 113;
+  --secondary: 252 165 165;
+  --accent: 244 63 94;
+  --danger: 220 38 38;
+  --muted: 185 146 146;
+}
+
+:root[data-theme="vip"] {
+  --background: 5 8 13;
+  --foreground: 226 232 240;
+  --surface: 12 18 28;
+  --card: 15 23 42;
+  --border: 30 41 59;
+  --primary: 99 102 241;
+  --secondary: 56 189 248;
+  --accent: 234 179 8;
+  --danger: 248 113 113;
+  --muted: 148 163 184;
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+body {
+  font-family: "Cairo", ui-sans-serif, system-ui, sans-serif;
+  background: radial-gradient(circle at top, rgba(var(--primary), 0.12), transparent 45%), rgb(var(--background));
+  color: rgb(var(--foreground));
+}
+
+.saleh-glass {
+  background: linear-gradient(180deg, rgba(var(--card), 0.85), rgba(var(--surface), 0.7));
+  backdrop-filter: blur(8px);
+}
+
+::selection {
+  background-color: rgba(var(--primary), 0.2);
+  color: rgb(255 255 255);
+}
