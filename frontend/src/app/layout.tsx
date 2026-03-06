@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 
+import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
+
 import "./globals.css";
 
 const cairo = Cairo({
@@ -21,7 +24,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
-      <body className={cairo.className}>{children}</body>
+      <body className={cairo.className}>
+        <div className="flex min-h-screen flex-col bg-saleh-bg text-saleh-text">
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </div>
+      </body>
     </html>
   );
 }
