@@ -12,19 +12,11 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const router = useRouter();
-  const { isAuthenticated, isLoading, user, isHydrated, fetchMe } = useUserStore((state) => ({
+  const { isAuthenticated, isLoading, user } = useUserStore((state) => ({
     isAuthenticated: state.isAuthenticated,
     isLoading: state.isLoading,
-    user: state.user,
-    isHydrated: state.isHydrated,
-    fetchMe: state.fetchMe
+    user: state.user
   }));
-
-  useEffect(() => {
-    if (!isHydrated) {
-      void fetchMe();
-    }
-  }, [fetchMe, isHydrated]);
 
   const isAuthorized = useMemo(() => {
     if (!allowedRoles || allowedRoles.length === 0) {
@@ -39,7 +31,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }, [allowedRoles, user]);
 
   useEffect(() => {
-    if (isLoading || !isHydrated) {
+    if (isLoading) {
       return;
     }
 
@@ -51,10 +43,14 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     if (!isAuthorized) {
       router.replace("/");
     }
-  }, [isAuthenticated, isAuthorized, isLoading, isHydrated, router]);
+  }, [isAuthenticated, isAuthorized, isLoading, router]);
 
-  if (isLoading || !isHydrated || !isAuthenticated || !isAuthorized) {
-    return <div className="flex min-h-[40vh] items-center justify-center text-saleh-textMuted">Loading...</div>;
+  if (isLoading || !isAuthenticated || !isAuthorized) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-saleh-textMuted">
+        Loading...
+      </div>
+    );
   }
 
   return <>{children}</>;

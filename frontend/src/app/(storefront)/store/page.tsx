@@ -1,51 +1,39 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
-import api from "@/lib/axios";
 import { ProductCard } from "@/components/product/ProductCard";
 
-interface MerchantUser {
-  _id: string;
-  fullName?: string;
-  username?: string;
-}
-
-interface Offer {
-  merchant: MerchantUser | string;
-  price: number;
-  isActive: boolean;
-}
-
-interface ApiProduct {
-  _id: string;
-  name: string;
-  image: string;
-  basePrice: number;
-  productType: "PIN_BASED" | "DIRECT_TOPUP";
-  offers: Offer[];
-}
+const mockProducts = [
+  {
+    id: "pubg-600-uc",
+    name: "PUBG 600 UC",
+    image: "https://placehold.co/640x360/111827/5EEAD4?text=PUBG+600+UC",
+    basePrice: 10,
+    productType: "DIRECT_TOPUP" as const,
+    offers: [
+      { merchantId: "m1", merchantName: "FastPay", price: 9.5, isActive: true },
+      { merchantId: "m2", merchantName: "SalehOfficial", price: 10, isActive: true }
+    ]
+  },
+  {
+    id: "freefire-1080-d",
+    name: "Free Fire 1080 Diamonds",
+    image: "https://placehold.co/640x360/111827/5EEAD4?text=Free+Fire+1080",
+    basePrice: 15,
+    productType: "PIN_BASED" as const,
+    offers: [
+      { merchantId: "m3", merchantName: "UltraTopup", price: 14.5, isActive: true },
+      { merchantId: "m2", merchantName: "SalehOfficial", price: 15, isActive: true }
+    ]
+  },
+  {
+    id: "steam-20",
+    name: "Steam Wallet $20",
+    image: "https://placehold.co/640x360/111827/5EEAD4?text=Steam+20",
+    basePrice: 20,
+    productType: "PIN_BASED" as const,
+    offers: [{ merchantId: "m4", merchantName: "CodeHub", price: 19.2, isActive: true }]
+  }
+];
 
 export default function StorePage() {
-  const [products, setProducts] = useState<ApiProduct[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const response = await api.get<{ products: ApiProduct[] }>("/catalog/products");
-        setProducts(response.data.products);
-      } catch {
-        setError("Failed to load products.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void load();
-  }, []);
-
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6">
       <header className="space-y-2">
@@ -53,37 +41,11 @@ export default function StorePage() {
         <p className="text-sm text-saleh-textMuted">Browse all digital products and choose the best available offer.</p>
       </header>
 
-      {loading ? (
-        <p className="text-saleh-textMuted">Loading products...</p>
-      ) : error ? (
-        <p className="text-sm text-red-400">{error}</p>
-      ) : products.length === 0 ? (
-        <p className="text-saleh-textMuted">No products available right now.</p>
-      ) : (
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((product) => (
-            <ProductCard
-              key={product._id}
-              product={{
-                id: product._id,
-                name: product.name,
-                image: product.image,
-                basePrice: product.basePrice,
-                productType: product.productType,
-                offers: product.offers.map((offer) => ({
-                  merchantId: typeof offer.merchant === "string" ? offer.merchant : offer.merchant._id,
-                  merchantName:
-                    typeof offer.merchant === "string"
-                      ? "Merchant"
-                      : offer.merchant.fullName || offer.merchant.username || "Merchant",
-                  price: offer.price,
-                  isActive: offer.isActive
-                }))
-              }}
-            />
-          ))}
-        </section>
-      )}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {mockProducts.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </section>
     </div>
   );
 }

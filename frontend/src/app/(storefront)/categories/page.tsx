@@ -1,36 +1,13 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
-import api from "@/lib/axios";
-
-interface Category {
-  _id: string;
-  name: string;
-  slug: string;
-}
+const categories = [
+  { name: "PUBG", slug: "pubg", icon: "🎯", count: 12 },
+  { name: "Free Fire", slug: "free-fire", icon: "🔥", count: 9 },
+  { name: "Mobile Legends", slug: "mobile-legends", icon: "⚔️", count: 7 },
+  { name: "Steam", slug: "steam", icon: "🎮", count: 15 }
+];
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const response = await api.get<{ categories: Category[] }>("/catalog/categories");
-        setCategories(response.data.categories);
-      } catch {
-        setError("Failed to load categories.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void load();
-  }, []);
-
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6">
       <header>
@@ -38,26 +15,21 @@ export default function CategoriesPage() {
         <p className="mt-2 text-sm text-saleh-textMuted">Choose a category to view available offers and products.</p>
       </header>
 
-      {loading ? (
-        <p className="text-saleh-textMuted">Loading categories...</p>
-      ) : error ? (
-        <p className="text-sm text-red-400">{error}</p>
-      ) : categories.length === 0 ? (
-        <p className="text-saleh-textMuted">No categories available yet.</p>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {categories.map((category) => (
-            <Link
-              key={category._id}
-              href={`/categories/${category.slug}`}
-              className="rounded-xl border border-saleh-border bg-saleh-card p-4 transition-colors hover:border-saleh-primary/40 hover:bg-saleh-surface"
-            >
-              <h2 className="font-bold text-saleh-text">{category.name}</h2>
-              <p className="mt-1 text-xs text-saleh-textMuted">Open category</p>
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {categories.map((category) => (
+          <Link
+            key={category.slug}
+            href={`/categories/${category.slug}`}
+            className="rounded-xl border border-saleh-border bg-saleh-card p-4 transition-colors hover:border-saleh-primary/40 hover:bg-saleh-surface"
+          >
+            <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-saleh-primary/15 text-2xl">
+              {category.icon}
+            </div>
+            <h2 className="font-bold text-saleh-text">{category.name}</h2>
+            <p className="mt-1 text-xs text-saleh-textMuted">{category.count} products</p>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,83 +1,107 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Button } from "@/components/ui/Button";
-import api from "@/lib/axios";
-import { useCartStore } from "@/store/useCartStore";
 
-type PaymentMethod = "Wallet" | "CreditCard";
+type PaymentMethod = "wallet" | "creditCard";
 
 export default function CheckoutPage() {
-  const router = useRouter();
-  const { items, getTotal, clearCart } = useCartStore((state) => ({
-    items: state.items,
-    getTotal: state.getTotal,
-    clearCart: state.clearCart
-  }));
-
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Wallet");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("wallet");
+  const [promoCode, setPromoCode] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState("");
-
-  const subtotal = getTotal();
-  const fees = useMemo(() => (items.length ? 0.5 : 0), [items.length]);
-  const total = subtotal + fees;
 
   const handleConfirmPayment = async () => {
-    if (items.length === 0) return;
-
     setIsProcessing(true);
-    setError("");
-    try {
-      await api.post("/orders/checkout", { items, paymentMethod });
-      clearCart();
-      window.alert("Order Successful! Ticket/PIN generated.");
-      router.push("/profile");
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Checkout failed. Please try again.");
-    } finally {
-      setIsProcessing(false);
-    }
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 2000);
+    });
+
+    setIsProcessing(false);
+    window.alert("Order Successful! Ticket/PIN generated.");
   };
 
   return (
-    <ProtectedRoute allowedRoles={["Customer", "SuperAdmin", "Merchant", "Employee"]}>
-      <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 py-8 sm:px-6 lg:grid-cols-3">
-        <section className="space-y-6 rounded-xl border border-saleh-border bg-saleh-card p-5 lg:col-span-2">
+    <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-6 px-4 py-8 sm:px-6 lg:grid-cols-3">
+      <section className="space-y-6 rounded-xl border border-saleh-border bg-saleh-card p-5 lg:col-span-2">
+        <div>
           <h1 className="text-2xl font-black text-saleh-primary sm:text-3xl">Checkout</h1>
-          <div className="space-y-3">
-            <label className="flex cursor-pointer items-center justify-between rounded-lg border border-saleh-border bg-saleh-surface p-3">
-              <span className="font-semibold text-saleh-text">Wallet Balance</span>
-              <input type="radio" checked={paymentMethod === "Wallet"} onChange={() => setPaymentMethod("Wallet")} />
-            </label>
-            <label className="flex cursor-pointer items-center justify-between rounded-lg border border-saleh-border bg-saleh-surface p-3">
-              <span className="font-semibold text-saleh-text">Credit Card</span>
-              <input type="radio" checked={paymentMethod === "CreditCard"} onChange={() => setPaymentMethod("CreditCard")} />
-            </label>
-          </div>
-        </section>
+          <p className="mt-2 text-sm text-saleh-textMuted">Choose your payment method and confirm your purchase.</p>
+        </div>
 
-        <aside className="space-y-4 rounded-xl border border-saleh-border bg-saleh-card p-5">
-          <h2 className="text-lg font-black text-saleh-primary">Order Summary</h2>
-          <div className="space-y-2 text-sm text-saleh-textMuted">
-            {items.map((item) => (
-              <p key={`${item.productId}-${item.merchantId}`}>{item.name} × {item.quantity} - ${item.price.toFixed(2)}</p>
-            ))}
+        <div className="space-y-3">
+          <h2 className="text-sm font-bold text-saleh-text">Payment Method</h2>
+
+          <label className="flex cursor-pointer items-center justify-between rounded-lg border border-saleh-border bg-saleh-surface p-3">
+            <div>
+              <p className="font-semibold text-saleh-text">Wallet Balance</p>
+              <p className="text-xs text-saleh-textMuted">Current: $50.00</p>
+            </div>
+            <input
+              type="radio"
+              name="paymentMethod"
+              checked={paymentMethod === "wallet"}
+              onChange={() => setPaymentMethod("wallet")}
+              className="h-4 w-4 accent-[#5EEAD4]"
+            />
+          </label>
+
+          <label className="flex cursor-pointer items-center justify-between rounded-lg border border-saleh-border bg-saleh-surface p-3">
+            <div>
+              <p className="font-semibold text-saleh-text">Credit Card</p>
+              <p className="text-xs text-saleh-textMuted">Visa / MasterCard</p>
+            </div>
+            <input
+              type="radio"
+              name="paymentMethod"
+              checked={paymentMethod === "creditCard"}
+              onChange={() => setPaymentMethod("creditCard")}
+              className="h-4 w-4 accent-[#5EEAD4]"
+            />
+          </label>
+        </div>
+
+        <div className="space-y-2">
+          <h2 className="text-sm font-bold text-saleh-text">Promo Code</h2>
+          <input
+            value={promoCode}
+            onChange={(event) => setPromoCode(event.target.value)}
+            type="text"
+            placeholder="Enter promo code"
+            className="h-11 w-full rounded-lg border border-saleh-border bg-saleh-surface px-3 text-sm text-saleh-text placeholder:text-saleh-textMuted focus:border-saleh-primary focus:outline-none"
+          />
+        </div>
+      </section>
+
+      <aside className="space-y-4 rounded-xl border border-saleh-border bg-saleh-card p-5">
+        <h2 className="text-lg font-black text-saleh-primary">Order Summary</h2>
+
+        <div className="rounded-lg border border-saleh-border bg-saleh-surface p-3 text-sm">
+          <p className="font-semibold text-saleh-text">PUBG 600 UC</p>
+          <p className="mt-1 text-saleh-textMuted">Vendor: FastPay</p>
+          <p className="mt-2 font-bold text-saleh-secondary">$9.50</p>
+        </div>
+
+        <div className="space-y-2 border-t border-saleh-border pt-3 text-sm text-saleh-text">
+          <div className="flex items-center justify-between">
+            <span>Subtotal</span>
+            <span>$9.50</span>
           </div>
-          <div className="space-y-2 border-t border-saleh-border pt-3 text-sm text-saleh-text">
-            <div className="flex justify-between"><span>Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span>Tax/Fees</span><span>${fees.toFixed(2)}</span></div>
-            <div className="flex justify-between font-black"><span>Total</span><span>${total.toFixed(2)}</span></div>
+          <div className="flex items-center justify-between text-saleh-textMuted">
+            <span>Tax/Fees</span>
+            <span>$0.50</span>
           </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          <Button className="w-full" onClick={handleConfirmPayment} disabled={isProcessing || items.length === 0}>
-            {isProcessing ? "Processing..." : "Confirm & Pay"}
-          </Button>
-        </aside>
-      </div>
-    </ProtectedRoute>
+          <div className="flex items-center justify-between text-base font-black text-saleh-primary">
+            <span>Total</span>
+            <span>$10.00</span>
+          </div>
+        </div>
+
+        <Button onClick={handleConfirmPayment} disabled={isProcessing} className="w-full" size="lg">
+          {isProcessing ? "Processing..." : "Confirm & Pay"}
+        </Button>
+      </aside>
+    </div>
   );
 }

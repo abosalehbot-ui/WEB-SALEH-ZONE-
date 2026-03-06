@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" data-theme="default">
+    <html lang="ar" dir="rtl">
       <body className={cairo.className}>
         <div className="flex min-h-screen flex-col bg-saleh-bg text-saleh-text">
           <Navbar />
