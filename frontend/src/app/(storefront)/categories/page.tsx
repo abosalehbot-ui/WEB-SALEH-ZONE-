@@ -13,11 +13,19 @@ interface Category {
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
-      const response = await api.get<{ categories: Category[] }>("/catalog/categories");
-      setCategories(response.data.categories);
+      try {
+        const response = await api.get<{ categories: Category[] }>("/catalog/categories");
+        setCategories(response.data.categories);
+      } catch {
+        setError("Failed to load categories.");
+      } finally {
+        setLoading(false);
+      }
     };
 
     void load();
@@ -30,18 +38,26 @@ export default function CategoriesPage() {
         <p className="mt-2 text-sm text-saleh-textMuted">Choose a category to view available offers and products.</p>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {categories.map((category) => (
-          <Link
-            key={category._id}
-            href={`/categories/${category.slug}`}
-            className="rounded-xl border border-saleh-border bg-saleh-card p-4 transition-colors hover:border-saleh-primary/40 hover:bg-saleh-surface"
-          >
-            <h2 className="font-bold text-saleh-text">{category.name}</h2>
-            <p className="mt-1 text-xs text-saleh-textMuted">Open category</p>
-          </Link>
-        ))}
-      </div>
+      {loading ? (
+        <p className="text-saleh-textMuted">Loading categories...</p>
+      ) : error ? (
+        <p className="text-sm text-red-400">{error}</p>
+      ) : categories.length === 0 ? (
+        <p className="text-saleh-textMuted">No categories available yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {categories.map((category) => (
+            <Link
+              key={category._id}
+              href={`/categories/${category.slug}`}
+              className="rounded-xl border border-saleh-border bg-saleh-card p-4 transition-colors hover:border-saleh-primary/40 hover:bg-saleh-surface"
+            >
+              <h2 className="font-bold text-saleh-text">{category.name}</h2>
+              <p className="mt-1 text-xs text-saleh-textMuted">Open category</p>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

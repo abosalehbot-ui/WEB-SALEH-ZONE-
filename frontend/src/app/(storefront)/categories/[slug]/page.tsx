@@ -20,12 +20,22 @@ interface Product {
 export default function CategoryDetailsPage({ params }: { params: { slug: string } }) {
   const [category, setCategory] = useState<Category | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
-      const response = await api.get<{ category: Category; products: Product[] }>(`/catalog/categories/${params.slug}`);
-      setCategory(response.data.category);
-      setProducts(response.data.products);
+      setLoading(true);
+      setError("");
+      try {
+        const response = await api.get<{ category: Category; products: Product[] }>(`/catalog/categories/${params.slug}`);
+        setCategory(response.data.category);
+        setProducts(response.data.products);
+      } catch {
+        setError("Category not found or failed to load.");
+      } finally {
+        setLoading(false);
+      }
     };
 
     void load();
@@ -37,18 +47,26 @@ export default function CategoryDetailsPage({ params }: { params: { slug: string
         <h1 className="text-2xl font-black text-saleh-primary sm:text-3xl">Category: {category?.name || params.slug}</h1>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {products.map((product) => (
-          <Link
-            key={product._id}
-            href={`/product/${product._id}`}
-            className="rounded-xl border border-saleh-border bg-saleh-card p-4 transition-colors hover:border-saleh-primary/40 hover:bg-saleh-surface"
-          >
-            <h2 className="font-semibold text-saleh-text">{product.name}</h2>
-            <p className="mt-2 text-sm text-saleh-secondary">From ${product.basePrice.toFixed(2)}</p>
-          </Link>
-        ))}
-      </div>
+      {loading ? (
+        <p className="text-saleh-textMuted">Loading category...</p>
+      ) : error ? (
+        <p className="text-sm text-red-400">{error}</p>
+      ) : products.length === 0 ? (
+        <p className="text-saleh-textMuted">No products in this category yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((product) => (
+            <Link
+              key={product._id}
+              href={`/product/${product._id}`}
+              className="rounded-xl border border-saleh-border bg-saleh-card p-4 transition-colors hover:border-saleh-primary/40 hover:bg-saleh-surface"
+            >
+              <h2 className="font-semibold text-saleh-text">{product.name}</h2>
+              <p className="mt-2 text-sm text-saleh-secondary">From ${product.basePrice.toFixed(2)}</p>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -20,6 +20,7 @@ export default function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Wallet");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState("");
 
   const subtotal = getTotal();
   const fees = useMemo(() => (items.length ? 0.5 : 0), [items.length]);
@@ -29,11 +30,14 @@ export default function CheckoutPage() {
     if (items.length === 0) return;
 
     setIsProcessing(true);
+    setError("");
     try {
-      await api.post("/orders/checkout", { items });
+      await api.post("/orders/checkout", { items, paymentMethod });
       clearCart();
       window.alert("Order Successful! Ticket/PIN generated.");
       router.push("/profile");
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Checkout failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -68,6 +72,7 @@ export default function CheckoutPage() {
             <div className="flex justify-between"><span>Tax/Fees</span><span>${fees.toFixed(2)}</span></div>
             <div className="flex justify-between font-black"><span>Total</span><span>${total.toFixed(2)}</span></div>
           </div>
+          {error && <p className="text-sm text-red-400">{error}</p>}
           <Button className="w-full" onClick={handleConfirmPayment} disabled={isProcessing || items.length === 0}>
             {isProcessing ? "Processing..." : "Confirm & Pay"}
           </Button>

@@ -29,12 +29,18 @@ interface ApiProduct {
 export default function StorePage() {
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const load = async () => {
-      const response = await api.get<{ products: ApiProduct[] }>("/catalog/products");
-      setProducts(response.data.products);
-      setLoading(false);
+      try {
+        const response = await api.get<{ products: ApiProduct[] }>("/catalog/products");
+        setProducts(response.data.products);
+      } catch {
+        setError("Failed to load products.");
+      } finally {
+        setLoading(false);
+      }
     };
 
     void load();
@@ -49,6 +55,10 @@ export default function StorePage() {
 
       {loading ? (
         <p className="text-saleh-textMuted">Loading products...</p>
+      ) : error ? (
+        <p className="text-sm text-red-400">{error}</p>
+      ) : products.length === 0 ? (
+        <p className="text-saleh-textMuted">No products available right now.</p>
       ) : (
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => (
