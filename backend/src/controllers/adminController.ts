@@ -111,48 +111,6 @@ export const listProducts = async (_req: Request, res: Response, next: NextFunct
   }
 };
 
-
-
-export const createProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { name, slug, category, productType, basePrice, image, description } = req.body as any;
-    if (!name || !slug || !category || !productType) return next(new AppError("name, slug, category, productType are required", 400));
-
-    const product = await Product.create({
-      name,
-      slug,
-      category,
-      productType,
-      basePrice: Number(basePrice || 0),
-      image,
-      description,
-      offers: []
-    });
-
-    res.status(201).json({ product });
-  } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Failed to create product", 500));
-  }
-};
-
-export const updateProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!product) return next(new AppError("Product not found", 404));
-    res.status(200).json({ product });
-  } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Failed to update product", 500));
-  }
-};
-
-export const deleteProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    await Product.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Product deleted" });
-  } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Failed to delete product", 500));
-  }
-};
 export const listOrders = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const orders = await Order.find()

@@ -1,73 +1,69 @@
-"use client";
-
-import { FormEvent, useEffect, useState } from "react";
-
 import { Button } from "@/components/ui/Button";
-import api from "@/lib/axios";
 
-interface Message {
-  sender: { fullName?: string; username?: string; role?: string };
-  text: string;
-  timestamp: string;
+interface EmployeeChatPageProps {
+  params: {
+    ticketId: string;
+  };
 }
 
-interface Ticket {
-  _id: string;
-  status: string;
-  orderRef?: { orderId?: string };
-  customer?: { fullName?: string; username?: string };
-  messages: Message[];
-}
+const mockMessages = [
+  {
+    id: 1,
+    sender: "Customer",
+    text: "Here is my ID: 12345"
+  },
+  {
+    id: 2,
+    sender: "Employee",
+    text: "Processing now..."
+  },
+  {
+    id: 3,
+    sender: "Customer",
+    text: "Thank you!"
+  }
+];
 
-export default function EmployeeChatPage({ params }: { params: { ticketId: string } }) {
-  const [ticket, setTicket] = useState<Ticket | null>(null);
-  const [text, setText] = useState("");
-
-  const load = async () => {
-    const response = await api.get<{ tickets: Ticket[] }>("/support/queue");
-    setTicket(response.data.tickets.find((item) => item._id === params.ticketId) || null);
-  };
-
-  useEffect(() => {
-    void load();
-  }, [params.ticketId]);
-
-  const onSend = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!text.trim()) return;
-    await api.post(`/support/${params.ticketId}/messages`, { message: text });
-    setText("");
-    await load();
-  };
-
-  const onResolve = async () => {
-    await api.post(`/support/${params.ticketId}/resolve`);
-    await load();
-  };
-
+export default function EmployeeChatPage({ params }: EmployeeChatPageProps) {
   return (
     <div className="grid min-h-[calc(100vh-14rem)] grid-cols-1 gap-4 lg:grid-cols-3">
       <aside className="rounded-xl border border-saleh-border bg-saleh-surface p-4 lg:col-span-1">
         <h1 className="text-xl font-black text-saleh-primary">Ticket Details</h1>
         <div className="mt-4 space-y-3 text-sm text-saleh-text">
-          <p><span className="text-saleh-textMuted">Ticket ID:</span> {params.ticketId}</p>
-          <p><span className="text-saleh-textMuted">Order:</span> {ticket?.orderRef?.orderId || "-"}</p>
-          <p><span className="text-saleh-textMuted">Customer:</span> {ticket?.customer?.fullName || ticket?.customer?.username || "-"}</p>
-          <p><span className="text-saleh-textMuted">Status:</span> {ticket?.status || "-"}</p>
+          <p>
+            <span className="text-saleh-textMuted">Ticket ID:</span> {params.ticketId}
+          </p>
+          <p>
+            <span className="text-saleh-textMuted">Product:</span> PUBG 600 UC (ID)
+          </p>
+          <p>
+            <span className="text-saleh-textMuted">Player ID:</span> 12345
+          </p>
+          <p>
+            <span className="text-saleh-textMuted">Customer:</span> Ahmed
+          </p>
         </div>
 
-        <Button className="mt-6 w-full" onClick={onResolve}>Fulfill Order</Button>
+        <Button className="mt-6 w-full">Fulfill Order</Button>
       </aside>
 
       <section className="flex min-h-[28rem] flex-col rounded-xl border border-saleh-border bg-saleh-surface lg:col-span-2">
-        <div className="border-b border-saleh-border px-4 py-3"><h2 className="font-semibold text-saleh-text">Live Chat</h2></div>
+        <div className="border-b border-saleh-border px-4 py-3">
+          <h2 className="font-semibold text-saleh-text">Live Chat</h2>
+        </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
-          {ticket?.messages.map((message, index) => {
-            const isEmployee = message.sender?.role === "Employee" || message.sender?.role === "SuperAdmin";
+          {mockMessages.map((message) => {
+            const isEmployee = message.sender === "Employee";
+
             return (
-              <div key={index} className={`max-w-[85%] rounded-xl border border-saleh-border bg-saleh-card p-3 text-sm ${isEmployee ? "mr-auto" : "ml-auto"}`}>
-                <p className="mb-1 text-xs text-saleh-textMuted">{message.sender?.fullName || message.sender?.username || "User"}</p>
+              <div
+                key={message.id}
+                className={`max-w-[85%] rounded-xl border border-saleh-border bg-saleh-card p-3 text-sm ${
+                  isEmployee ? "mr-auto text-right" : "ml-auto text-right"
+                }`}
+              >
+                <p className="mb-1 text-xs text-saleh-textMuted">{message.sender}</p>
                 <p className="text-saleh-text">{message.text}</p>
               </div>
             );
@@ -75,9 +71,15 @@ export default function EmployeeChatPage({ params }: { params: { ticketId: strin
         </div>
 
         <div className="border-t border-saleh-border p-3">
-          <form className="flex items-center gap-2" onSubmit={onSend}>
-            <Button type="submit" size="sm">Send</Button>
-            <input value={text} onChange={(event) => setText(event.target.value)} type="text" placeholder="Type a message..." className="h-10 flex-1 rounded-lg border border-saleh-border bg-saleh-card px-3 text-sm text-saleh-text" />
+          <form className="flex items-center gap-2">
+            <Button type="submit" size="sm">
+              Send
+            </Button>
+            <input
+              type="text"
+              placeholder="Type a message..."
+              className="h-10 flex-1 rounded-lg border border-saleh-border bg-saleh-card px-3 text-sm text-saleh-text placeholder:text-saleh-textMuted focus:border-saleh-primary focus:outline-none"
+            />
           </form>
         </div>
       </section>

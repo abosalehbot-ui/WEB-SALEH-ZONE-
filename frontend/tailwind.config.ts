@@ -4,33 +4,33 @@ const config: Config = {
   content: [
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/lib/**/*.{js,ts,jsx,tsx,mdx}"
+    "./src/lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Cairo", "ui-sans-serif", "system-ui", "sans-serif"]
+        sans: ["Cairo", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
         saleh: {
-          bg: "rgb(var(--background) / <alpha-value>)",
-          surface: "rgb(var(--surface) / <alpha-value>)",
-          card: "rgb(var(--card) / <alpha-value>)",
-          border: "rgb(var(--border) / <alpha-value>)",
-          text: "rgb(var(--foreground) / <alpha-value>)",
-          textMuted: "rgb(var(--muted) / <alpha-value>)",
-          primary: "rgb(var(--primary) / <alpha-value>)",
-          secondary: "rgb(var(--secondary) / <alpha-value>)",
-          accent: "rgb(var(--accent) / <alpha-value>)",
-          danger: "rgb(var(--danger) / <alpha-value>)"
-        }
+          bg: "#050505",
+          surface: "#111111",
+          card: "#111827",
+          border: "#374151",
+          text: "#D1D5DB",
+          textMuted: "#9CA3AF",
+          primary: "#5EEAD4",
+          secondary: "#7DFC89",
+          accent: "#EAB308",
+          danger: "#EF4444",
+        },
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(var(--primary), 0.25), 0 0 24px rgba(var(--primary), 0.25)"
-      }
-    }
+        glow: "0 0 0 1px rgba(94, 234, 212, 0.25), 0 0 24px rgba(94, 234, 212, 0.2)",
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };
 
 export default config;
