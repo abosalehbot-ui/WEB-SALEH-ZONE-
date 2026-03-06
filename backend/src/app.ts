@@ -3,6 +3,7 @@ import express, { Application, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 
 import { globalErrorHandler, notFoundHandler } from "./middlewares/errorHandler";
+import authRoutes from "./routes/authRoutes";
 
 const app: Application = express();
 
@@ -31,6 +32,8 @@ app.get("/healthz", (_req: Request, res: Response) => {
 app.get("/", (_req: Request, res: Response) => {
   res.status(200).json({ message: "Saleh Zone backend is running" });
 });
+
+app.use("/api/auth", authRoutes);
 
 app.use(notFoundHandler);
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
