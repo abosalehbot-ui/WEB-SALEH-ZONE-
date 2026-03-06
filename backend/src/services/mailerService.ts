@@ -1,4 +1,4 @@
-import nodemailer, { Transporter } from "nodemailer";
+import nodemailer, { TransportOptions, Transporter } from "nodemailer";
 
 interface PasswordResetEmailPayload {
   to: string;
@@ -12,6 +12,8 @@ class MailerConfigError extends Error {
   }
 }
 
+const parseBoolean = (value?: string): boolean => value?.toLowerCase() === "true";
+
 const buildResetLink = (email: string, token: string): string => {
   const appUrl = process.env.APP_URL || process.env.FRONTEND_URL;
   if (!appUrl) {
@@ -24,17 +26,42 @@ const buildResetLink = (email: string, token: string): string => {
 
 let cachedTransporter: Transporter | null = null;
 
+const buildSmtpTransportOptions = (): TransportOptions => {
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = Number.parseInt(process.env.SMTP_PORT || "587", 10);
+  const smtpSecure = parseBoolean(process.env.SMTP_SECURE);
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
+  if (!smtpHost || !smtpUser || !smtpPass || Number.isNaN(smtpPort)) {
+    throw new MailerConfigError("SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS must be configured for SMTP provider");
+  }
+
+  return {
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpSecure,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass
+    }
+  };
+};
+
 const getTransporter = (): Transporter => {
   if (cachedTransporter) {
     return cachedTransporter;
   }
 
-  const smtpUrl = process.env.SMTP_URL;
-  if (!smtpUrl) {
-    throw new MailerConfigError("SMTP_URL is required to send password reset emails");
+  const provider = (process.env.MAIL_PROVIDER || "smtp").toLowerCase();
+  if (provider !== "smtp") {
+    throw new MailerConfigError("Unsupported MAIL_PROVIDER. Only 'smtp' is currently supported");
   }
 
-  cachedTransporter = nodemailer.createTransport(smtpUrl);
+  const smtpUrl = process.env.SMTP_URL;
+  const transportOptions = smtpUrl ? smtpUrl : buildSmtpTransportOptions();
+
+  cachedTransporter = nodemailer.createTransport(transportOptions);
   return cachedTransporter;
 };
 
