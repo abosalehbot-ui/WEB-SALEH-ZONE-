@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { NextFunction, Request, Response } from "express";
 
 import { User } from "../models/User";
@@ -18,8 +19,12 @@ const sanitizeUser = (user: unknown): Record<string, unknown> => {
   if (!user || typeof user !== "object") return {};
   const safeUser = { ...(user as Record<string, unknown>) };
   delete safeUser.password;
+  delete safeUser.resetPasswordTokenHash;
+  delete safeUser.resetPasswordExpiresAt;
   return safeUser;
 };
+
+const hashResetToken = (token: string): string => crypto.createHash("sha256").update(token).digest("hex");
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -91,20 +96,55 @@ export const me = async (req: Request, res: Response, next: NextFunction): Promi
 
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, newPassword } = req.body as { email?: string; newPassword?: string };
-    if (!email || !newPassword || newPassword.length < 8) {
-      return next(new AppError("email and newPassword (min 8 chars) are required", 400));
+    const { email } = req.body as { email?: string };
+    if (!email) return next(new AppError("email is required", 400));
+
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+resetPasswordTokenHash +resetPasswordExpiresAt");
+    if (!user) {
+      res.status(200).json({ message: "If the account exists, a reset instruction has been generated." });
+      return;
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
-    if (!user) return next(new AppError("User not found", 404));
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordTokenHash = hashResetToken(rawToken);
+    user.resetPasswordExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+
+    const devMode = process.env.NODE_ENV !== "production";
+    res.status(200).json({
+      message: "Reset token generated. In production, this should be sent via email provider.",
+      ...(devMode ? { devResetToken: rawToken } : {})
+    });
+  } catch (error) {
+    return next(new AppError(error instanceof Error ? error.message : "Forgot password failed", 500));
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email, token, newPassword } = req.body as { email?: string; token?: string; newPassword?: string };
+
+    if (!email || !token || !newPassword || newPassword.length < 8) {
+      return next(new AppError("email, token and newPassword(min 8 chars) are required", 400));
+    }
+
+    const tokenHash = hashResetToken(token);
+    const user = await User.findOne({
+      email: email.toLowerCase(),
+      resetPasswordTokenHash: tokenHash,
+      resetPasswordExpiresAt: { $gt: new Date() }
+    }).select("+password +resetPasswordTokenHash +resetPasswordExpiresAt");
+
+    if (!user) return next(new AppError("Invalid or expired reset token", 400));
 
     user.password = await bcrypt.hash(newPassword, 12);
+    user.resetPasswordTokenHash = undefined;
+    user.resetPasswordExpiresAt = undefined;
     await user.save();
 
     res.status(200).json({ message: "Password reset successful" });
   } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Password reset failed", 500));
+    return next(new AppError(error instanceof Error ? error.message : "Reset password failed", 500));
   }
 };
 
