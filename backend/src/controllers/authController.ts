@@ -2,11 +2,13 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { NextFunction, Request, Response } from "express";
 
-import { User } from "../models/User";
 import { AppError } from "../middlewares/errorHandler";
+import { User } from "../models/User";
+import { sendPasswordResetEmail } from "../services/mailerService";
 import { generateToken } from "../utils/jwt";
 
 const AUTH_COOKIE_NAME = "token";
+const DEFAULT_RESET_TOKEN_TTL_MINUTES = 15;
 
 const buildCookieOptions = () => ({
   httpOnly: true,
@@ -26,14 +28,22 @@ const sanitizeUser = (user: unknown): Record<string, unknown> => {
 
 const hashResetToken = (token: string): string => crypto.createHash("sha256").update(token).digest("hex");
 
+const getResetTokenTtlMinutes = (): number => {
+  const parsed = Number.parseInt(process.env.RESET_TOKEN_TTL_MINUTES || "", 10);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    return DEFAULT_RESET_TOKEN_TTL_MINUTES;
+  }
+
+  return parsed;
+};
+
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password, username, fullName, role } = req.body as {
+    const { email, password, username, fullName } = req.body as {
       email?: string;
       password?: string;
       username?: string;
       fullName?: string;
-      role?: "SuperAdmin" | "Merchant" | "Employee" | "Customer";
     };
 
     if (!email || !password || !username || !fullName) {
@@ -50,7 +60,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       password: hashedPassword,
       username,
       fullName,
-      role: role || "Customer"
+      role: "Customer"
     });
 
     const token = generateToken(createdUser._id.toString());
@@ -101,18 +111,23 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 
     const user = await User.findOne({ email: email.toLowerCase() }).select("+resetPasswordTokenHash +resetPasswordExpiresAt");
     if (!user) {
-      res.status(200).json({ message: "If the account exists, a reset instruction has been generated." });
+      res.status(200).json({ message: "If the account exists, a reset instruction has been sent." });
       return;
     }
 
     const rawToken = crypto.randomBytes(32).toString("hex");
     user.resetPasswordTokenHash = hashResetToken(rawToken);
-    user.resetPasswordExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    user.resetPasswordExpiresAt = new Date(Date.now() + getResetTokenTtlMinutes() * 60 * 1000);
     await user.save();
+
+    await sendPasswordResetEmail({
+      to: user.email,
+      resetToken: rawToken
+    });
 
     const devMode = process.env.NODE_ENV !== "production";
     res.status(200).json({
-      message: "Reset token generated. In production, this should be sent via email provider.",
+      message: "If the account exists, a reset instruction has been sent.",
       ...(devMode ? { devResetToken: rawToken } : {})
     });
   } catch (error) {

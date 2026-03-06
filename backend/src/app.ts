@@ -3,22 +3,40 @@ import express, { Application, NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 
 import { globalErrorHandler, notFoundHandler } from "./middlewares/errorHandler";
-import authRoutes from "./routes/authRoutes";
-import walletRoutes from "./routes/walletRoutes";
-import orderRoutes from "./routes/orderRoutes";
-import catalogRoutes from "./routes/catalogRoutes";
 import adminRoutes from "./routes/adminRoutes";
+import authRoutes from "./routes/authRoutes";
+import catalogRoutes from "./routes/catalogRoutes";
 import merchantRoutes from "./routes/merchantRoutes";
-import userRoutes from "./routes/userRoutes";
+import orderRoutes from "./routes/orderRoutes";
 import supportRoutes from "./routes/supportRoutes";
+import userRoutes from "./routes/userRoutes";
+import walletRoutes from "./routes/walletRoutes";
 
 const app: Application = express();
 
-const allowedOrigin = process.env.FRONTEND_URL;
+const parseAllowedOrigins = (): string[] => {
+  const explicitOrigins = process.env.FRONTEND_ORIGINS?.split(",").map((origin) => origin.trim()).filter(Boolean) || [];
+
+  if (explicitOrigins.length > 0) {
+    return explicitOrigins;
+  }
+
+  if (process.env.FRONTEND_URL) {
+    return [process.env.FRONTEND_URL];
+  }
+
+  return [];
+};
+
+const allowedOrigins = parseAllowedOrigins();
 
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    if (!allowedOrigin || !origin || origin === allowedOrigin) {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 

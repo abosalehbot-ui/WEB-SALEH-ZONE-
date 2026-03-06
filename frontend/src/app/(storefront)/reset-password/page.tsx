@@ -1,21 +1,37 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import api from "@/lib/axios";
 
 export default function ResetPasswordPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    const emailFromQuery = searchParams.get("email");
+    const tokenFromQuery = searchParams.get("token");
+
+    if (emailFromQuery) {
+      setEmail(emailFromQuery);
+    }
+
+    if (tokenFromQuery) {
+      setToken(tokenFromQuery);
+    }
+  }, [searchParams]);
+
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     try {
       setError("");
+      setMessage("");
       const response = await api.post<{ message: string }>("/auth/reset-password", { email, token, newPassword });
       setMessage(response.data.message);
       setToken("");
