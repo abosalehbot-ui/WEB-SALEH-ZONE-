@@ -4,9 +4,9 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const sidebarLinks = [
   { href: "/admin", label: "Dashboard" },
-  { href: "/admin/categories", label: "Categories" },
-  { href: "/merchant/products", label: "Products" },
-  { href: "/employee", label: "Chat Support" }
+  { href: "/admin/products", label: "Products" },
+  { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/chat", label: "Chat Support" }
 ];
 
 export default function AdminLayout({
