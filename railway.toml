@@ -1,9 +1,0 @@
-[setup]
-nixPkgs = ["nodejs_20"]
-
-[build]
-builder = "NIXPACKS"
-buildCommand = "cd frontend && npm install && npm run build"
-
-[deploy]
-startCommand = "cd frontend && npm start"
