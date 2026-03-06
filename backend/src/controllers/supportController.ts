@@ -14,16 +14,6 @@ export const createSupportTicket = async (req: Request, res: Response, next: Nex
     const order = await Order.findOne({ orderId, customer: req.user.id });
     if (!order) return next(new AppError("Order not found", 404));
 
-    const existingOpenTicket = await ChatTicket.findOne({
-      orderRef: order._id,
-      customer: req.user.id,
-      status: { $in: ["Open", "In_Progress"] }
-    });
-
-    if (existingOpenTicket) {
-      return next(new AppError("An open support ticket already exists for this order", 409));
-    }
-
     const ticket = await ChatTicket.create({
       orderRef: order._id,
       customer: req.user.id,
@@ -74,13 +64,6 @@ export const addTicketMessage = async (req: Request, res: Response, next: NextFu
 
     const ticket = await ChatTicket.findById(req.params.ticketId);
     if (!ticket) return next(new AppError("Ticket not found", 404));
-
-    const isOwner = ticket.customer.toString() === req.user.id;
-    const isStaff = req.user.role === "Employee" || req.user.role === "SuperAdmin";
-
-    if (!isOwner && !isStaff) {
-      return next(new AppError("Forbidden", 403));
-    }
 
     ticket.messages.push({ sender: req.user.id as any, text: message, timestamp: new Date() } as any);
     if (ticket.status === "Open") ticket.status = "In_Progress";

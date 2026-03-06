@@ -19,13 +19,12 @@ export interface IUser {
   loyaltyPoints: number;
   merchantTier: MerchantTier;
   authProviders: IAuthProviders;
-  resetPasswordTokenHash?: string;
-  resetPasswordExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
 type UserDocument = HydratedDocument<IUser>;
+
 
 const authProvidersSchema = new Schema<IAuthProviders>(
   {
@@ -93,14 +92,6 @@ const userSchema = new Schema<IUser>(
     authProviders: {
       type: authProvidersSchema,
       default: {}
-    },
-    resetPasswordTokenHash: {
-      type: String,
-      select: false
-    },
-    resetPasswordExpiresAt: {
-      type: Date,
-      select: false
     }
   },
   {

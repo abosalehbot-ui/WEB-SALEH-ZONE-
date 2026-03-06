@@ -1,72 +1,87 @@
-"use client";
-
-import Link from "next/link";
-import { useEffect, useState } from "react";
-
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Button } from "@/components/ui/Button";
-import api from "@/lib/axios";
 
-interface QueueTicket {
-  _id: string;
-  status: string;
-  updatedAt: string;
-  orderRef?: { orderId?: string };
-  customer?: { fullName?: string; username?: string };
+interface QueueOrder {
+  id: string;
+  product: string;
+  customer: string;
+  date: string;
+  status: "Pending" | "In Progress";
 }
 
-export default function EmployeePage() {
-  const [tickets, setTickets] = useState<QueueTicket[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+const mockQueue: QueueOrder[] = [
+  {
+    id: "ORD-123",
+    product: "PUBG 600 UC (ID)",
+    customer: "Ahmed",
+    date: "2026-03-05 14:22",
+    status: "Pending"
+  },
+  {
+    id: "ORD-127",
+    product: "Free Fire 530 Diamonds",
+    customer: "Sara",
+    date: "2026-03-05 15:10",
+    status: "In Progress"
+  },
+  {
+    id: "ORD-131",
+    product: "Mobile Legends Weekly Pass",
+    customer: "Yousef",
+    date: "2026-03-05 15:45",
+    status: "Pending"
+  }
+];
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const response = await api.get<{ tickets: QueueTicket[] }>("/support/queue");
-        setTickets(response.data.tickets);
-      } catch {
-        setError("Failed to load support queue.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void load();
-  }, []);
-
+export default function EmployeeQueuePage() {
   return (
-    <ProtectedRoute allowedRoles={["Employee", "SuperAdmin"]}>
-      <div className="space-y-5">
-        <h1 className="text-2xl font-black text-saleh-primary">Fulfillment Center</h1>
-        {error && <p className="text-sm text-red-400">{error}</p>}
+    <div className="space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-2xl font-black text-saleh-primary sm:text-3xl">Fulfillment Center</h1>
+        <p className="text-sm text-saleh-textMuted">Orders requiring manual intervention and live customer support.</p>
+      </header>
 
-        {loading ? (
-          <p className="text-saleh-textMuted">Loading queue...</p>
-        ) : tickets.length === 0 ? (
-          <p className="text-saleh-textMuted">No open support tickets.</p>
-        ) : (
-          <div className="overflow-x-auto rounded-xl border border-saleh-border bg-saleh-surface">
-            <table className="min-w-full text-right text-sm">
-              <thead className="bg-saleh-card text-saleh-textMuted"><tr><th className="px-4 py-3">Ticket</th><th className="px-4 py-3">Order</th><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Date</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Actions</th></tr></thead>
-              <tbody>
-                {tickets.map((ticket) => (
-                  <tr key={ticket._id} className="border-t border-saleh-border/70 text-saleh-text">
-                    <td className="px-4 py-3">{ticket._id.slice(-6)}</td>
-                    <td className="px-4 py-3">{ticket.orderRef?.orderId || "-"}</td>
-                    <td className="px-4 py-3">{ticket.customer?.fullName || ticket.customer?.username || "Customer"}</td>
-                    <td className="px-4 py-3">{new Date(ticket.updatedAt).toLocaleDateString()}</td>
-                    <td className="px-4 py-3">{ticket.status}</td>
-                    <td className="px-4 py-3"><Link href={`/employee/chat/${ticket._id}`}><Button size="sm">Open Ticket</Button></Link></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <div className="overflow-hidden rounded-xl border border-saleh-border bg-saleh-card">
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-right text-sm">
+            <thead className="bg-saleh-surface text-saleh-textMuted">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Order ID</th>
+                <th className="px-4 py-3 font-semibold">Product</th>
+                <th className="px-4 py-3 font-semibold">Customer</th>
+                <th className="px-4 py-3 font-semibold">Date</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mockQueue.map((order) => (
+                <tr key={order.id} className="border-t border-saleh-border/70 text-saleh-text">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium">{order.id}</td>
+                  <td className="whitespace-nowrap px-4 py-3">{order.product}</td>
+                  <td className="whitespace-nowrap px-4 py-3">{order.customer}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-saleh-textMuted">{order.date}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        order.status === "Pending"
+                          ? "bg-amber-500/15 text-amber-300"
+                          : "bg-sky-500/15 text-sky-300"
+                      }`}
+                    >
+                      {order.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Button size="sm" variant="outline">
+                      Open Ticket
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </ProtectedRoute>
+    </div>
   );
 }

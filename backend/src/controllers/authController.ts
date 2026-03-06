@@ -1,41 +1,32 @@
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
 import { NextFunction, Request, Response } from "express";
 
-import { AppError } from "../middlewares/errorHandler";
 import { User } from "../models/User";
-import { sendPasswordResetEmail } from "../services/mailerService";
+import { AppError } from "../middlewares/errorHandler";
 import { generateToken } from "../utils/jwt";
 
 const AUTH_COOKIE_NAME = "token";
-const DEFAULT_RESET_TOKEN_TTL_MINUTES = 15;
 
 const buildCookieOptions = () => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: (process.env.NODE_ENV === "production" ? "none" : "lax") as "none" | "lax",
+  secure: true,
+  sameSite: "none" as const,
   maxAge: 7 * 24 * 60 * 60 * 1000
 });
 
 const sanitizeUser = (user: unknown): Record<string, unknown> => {
-  if (!user || typeof user !== "object") return {};
+  if (!user || typeof user !== "object") {
+    return {};
+  }
+
   const safeUser = { ...(user as Record<string, unknown>) };
   delete safeUser.password;
-  delete safeUser.resetPasswordTokenHash;
-  delete safeUser.resetPasswordExpiresAt;
   return safeUser;
 };
 
-const hashResetToken = (token: string): string => crypto.createHash("sha256").update(token).digest("hex");
-
-const getResetTokenTtlMinutes = (): number => {
-  const parsed = Number.parseInt(process.env.RESET_TOKEN_TTL_MINUTES || "", 10);
-  if (Number.isNaN(parsed) || parsed <= 0) {
-    return DEFAULT_RESET_TOKEN_TTL_MINUTES;
-  }
-
-  return parsed;
-};
+// TODO: Google Auth / OTP Integration
+// - Add Google OAuth callback/token exchange flow.
+// - Add email OTP generation, delivery, and verification endpoints.
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -50,116 +41,69 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       return next(new AppError("email, password, username, and fullName are required", 400));
     }
 
-    const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { username }] });
-    if (existingUser) return next(new AppError("User with this email or username already exists", 409));
+    const existingUser = await User.findOne({
+      $or: [{ email: email.toLowerCase() }, { username }]
+    });
+
+    if (existingUser) {
+      return next(new AppError("User with this email or username already exists", 409));
+    }
 
     const hashedPassword = await bcrypt.hash(password, 12);
+
     const createdUser = await User.create({
       userId: `SZ-${Date.now()}`,
       email,
       password: hashedPassword,
       username,
-      fullName,
-      role: "Customer"
+      fullName
     });
 
     const token = generateToken(createdUser._id.toString());
     res.cookie(AUTH_COOKIE_NAME, token, buildCookieOptions());
 
-    res.status(201).json({ message: "Registration successful", token, user: sanitizeUser(createdUser.toObject()) });
+    res.status(201).json({
+      message: "Registration successful",
+      token,
+      user: sanitizeUser(createdUser.toObject())
+    });
   } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Registration failed", 500));
+    const message = error instanceof Error ? error.message : "Registration failed";
+    return next(new AppError(message, 500));
   }
 };
 
 export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body as { email?: string; password?: string };
-    if (!email || !password) return next(new AppError("email and password are required", 400));
+
+    if (!email || !password) {
+      return next(new AppError("email and password are required", 400));
+    }
 
     const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
-    if (!user || !user.password) return next(new AppError("Invalid email or password", 401));
+
+    if (!user || !user.password) {
+      return next(new AppError("Invalid email or password", 401));
+    }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) return next(new AppError("Invalid email or password", 401));
+
+    if (!isPasswordValid) {
+      return next(new AppError("Invalid email or password", 401));
+    }
 
     const token = generateToken(user._id.toString());
     res.cookie(AUTH_COOKIE_NAME, token, buildCookieOptions());
 
-    res.status(200).json({ message: "Login successful", token, user: sanitizeUser(user.toObject()) });
-  } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Login failed", 500));
-  }
-};
-
-export const me = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    if (!req.user?.id) return next(new AppError("Unauthorized", 401));
-    const user = await User.findById(req.user.id);
-    if (!user) return next(new AppError("User not found", 404));
-
-    res.status(200).json({ user: sanitizeUser(user.toObject()) });
-  } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Failed to fetch user profile", 500));
-  }
-};
-
-export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { email } = req.body as { email?: string };
-    if (!email) return next(new AppError("email is required", 400));
-
-    const user = await User.findOne({ email: email.toLowerCase() }).select("+resetPasswordTokenHash +resetPasswordExpiresAt");
-    if (!user) {
-      res.status(200).json({ message: "If the account exists, a reset instruction has been sent." });
-      return;
-    }
-
-    const rawToken = crypto.randomBytes(32).toString("hex");
-    user.resetPasswordTokenHash = hashResetToken(rawToken);
-    user.resetPasswordExpiresAt = new Date(Date.now() + getResetTokenTtlMinutes() * 60 * 1000);
-    await user.save();
-
-    await sendPasswordResetEmail({
-      to: user.email,
-      resetToken: rawToken
-    });
-
-    const devMode = process.env.NODE_ENV !== "production";
     res.status(200).json({
-      message: "If the account exists, a reset instruction has been sent.",
-      ...(devMode ? { devResetToken: rawToken } : {})
+      message: "Login successful",
+      token,
+      user: sanitizeUser(user.toObject())
     });
   } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Forgot password failed", 500));
-  }
-};
-
-export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { email, token, newPassword } = req.body as { email?: string; token?: string; newPassword?: string };
-
-    if (!email || !token || !newPassword || newPassword.length < 8) {
-      return next(new AppError("email, token and newPassword(min 8 chars) are required", 400));
-    }
-
-    const tokenHash = hashResetToken(token);
-    const user = await User.findOne({
-      email: email.toLowerCase(),
-      resetPasswordTokenHash: tokenHash,
-      resetPasswordExpiresAt: { $gt: new Date() }
-    }).select("+password +resetPasswordTokenHash +resetPasswordExpiresAt");
-
-    if (!user) return next(new AppError("Invalid or expired reset token", 400));
-
-    user.password = await bcrypt.hash(newPassword, 12);
-    user.resetPasswordTokenHash = undefined;
-    user.resetPasswordExpiresAt = undefined;
-    await user.save();
-
-    res.status(200).json({ message: "Password reset successful" });
-  } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Reset password failed", 500));
+    const message = error instanceof Error ? error.message : "Login failed";
+    return next(new AppError(message, 500));
   }
 };
 
@@ -167,12 +111,13 @@ export const logout = async (_req: Request, res: Response, next: NextFunction): 
   try {
     res.clearCookie(AUTH_COOKIE_NAME, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+      secure: true,
+      sameSite: "none"
     });
 
     res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Logout failed", 500));
+    const message = error instanceof Error ? error.message : "Logout failed";
+    return next(new AppError(message, 500));
   }
 };
