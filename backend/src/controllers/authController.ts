@@ -9,8 +9,8 @@ const AUTH_COOKIE_NAME = "token";
 
 const buildCookieOptions = () => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: (process.env.NODE_ENV === "production" ? "none" : "lax") as "none" | "lax",
+  secure: true,
+  sameSite: "none" as const,
   maxAge: 7 * 24 * 60 * 60 * 1000
 });
 
@@ -24,14 +24,17 @@ const sanitizeUser = (user: unknown): Record<string, unknown> => {
   return safeUser;
 };
 
+// TODO: Google Auth / OTP Integration
+// - Add Google OAuth callback/token exchange flow.
+// - Add email OTP generation, delivery, and verification endpoints.
+
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, password, username, fullName, role } = req.body as {
+    const { email, password, username, fullName } = req.body as {
       email?: string;
       password?: string;
       username?: string;
       fullName?: string;
-      role?: "SuperAdmin" | "Merchant" | "Employee" | "Customer";
     };
 
     if (!email || !password || !username || !fullName) {
@@ -53,8 +56,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       email,
       password: hashedPassword,
       username,
-      fullName,
-      role: role || "Customer"
+      fullName
     });
 
     const token = generateToken(createdUser._id.toString());
@@ -105,31 +107,12 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   }
 };
 
-export const me = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    if (!req.user?.id) {
-      return next(new AppError("Unauthorized", 401));
-    }
-
-    const user = await User.findById(req.user.id);
-
-    if (!user) {
-      return next(new AppError("User not found", 404));
-    }
-
-    res.status(200).json({ user: sanitizeUser(user.toObject()) });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to fetch user profile";
-    return next(new AppError(message, 500));
-  }
-};
-
 export const logout = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     res.clearCookie(AUTH_COOKIE_NAME, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+      secure: true,
+      sameSite: "none"
     });
 
     res.status(200).json({ message: "Logged out successfully" });

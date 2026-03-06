@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 
 import { Button } from "@/components/ui/Button";
@@ -59,20 +58,16 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <article className="overflow-hidden rounded-2xl border border-saleh-border bg-saleh-surface shadow-sm">
-      <Link href={`/product/${product.id}`} className="block">
-        <div className="aspect-[16/10] w-full bg-saleh-card">
-          <img src={product.image} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
-        </div>
-      </Link>
+      <div className="aspect-[16/10] w-full bg-saleh-card">
+        <img src={product.image} alt={product.name} className="h-full w-full object-cover" loading="lazy" />
+      </div>
 
       <div className="space-y-4 p-4">
         <div className="space-y-2">
           <span className="inline-flex rounded-full bg-saleh-primary/15 px-2.5 py-1 text-xs font-semibold text-saleh-primary">
             {typeLabel}
           </span>
-          <Link href={`/product/${product.id}`} className="block text-lg font-bold text-saleh-text hover:text-saleh-primary">
-            {product.name}
-          </Link>
+          <h3 className="text-lg font-bold text-saleh-text">{product.name}</h3>
         </div>
 
         <div className="space-y-1 text-sm text-saleh-textMuted">

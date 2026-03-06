@@ -28,37 +28,6 @@ interface DeliveredPIN {
   pinCode: string;
 }
 
-
-
-export const getMyOrders = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    if (!req.user?.id) {
-      return next(new AppError("Unauthorized", 401));
-    }
-
-    const orders = await Order.find({ customer: req.user.id })
-      .populate("items.product", "name")
-      .populate("items.merchant", "fullName username")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({ orders });
-  } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Failed to fetch orders", 500));
-  }
-};
-
-export const getManualOrders = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const orders = await Order.find({ fulfillmentStatus: { $in: ["Pending", "Manual_Action_Required"] } })
-      .populate("customer", "fullName username")
-      .populate("items.product", "name")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({ orders });
-  } catch (error) {
-    return next(new AppError(error instanceof Error ? error.message : "Failed to fetch manual orders", 500));
-  }
-};
 export const checkoutCart = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   if (!req.user?.id) {
     return next(new AppError("Unauthorized", 401));
@@ -98,7 +67,7 @@ export const checkoutCart = async (req: Request, res: Response, next: NextFuncti
       }
 
       const matchedOffer = product.offers.find(
-        (offer: any) => offer.merchant.toString() === merchantId && offer.isActive
+        (offer) => offer.merchant.toString() === merchantId && offer.isActive
       );
 
       if (!matchedOffer) {
