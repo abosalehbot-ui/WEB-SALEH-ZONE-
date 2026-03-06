@@ -5,6 +5,7 @@ import helmet from "helmet";
 import { globalErrorHandler, notFoundHandler } from "./middlewares/errorHandler";
 import authRoutes from "./routes/authRoutes";
 import walletRoutes from "./routes/walletRoutes";
+import orderRoutes from "./routes/orderRoutes";
 
 const app: Application = express();
 
@@ -36,6 +37,7 @@ app.get("/", (_req: Request, res: Response) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
+app.use("/api/orders", orderRoutes);
 
 app.use(notFoundHandler);
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
