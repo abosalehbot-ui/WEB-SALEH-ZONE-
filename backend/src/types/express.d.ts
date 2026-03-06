@@ -1,18 +1,7 @@
-import "express";
+import { Request } from 'express';
 
-import type { MerchantTier, UserRole } from "../models/User";
-
-declare global {
-  namespace Express {
-    interface Request {
-      requestId?: string;
-      user?: {
-        id: string;
-        role: UserRole;
-        merchantTier: MerchantTier;
-      };
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: any;
   }
 }
-
-export {};
